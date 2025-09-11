@@ -46,37 +46,61 @@ export default function UploadComponent({ onUploadSuccess }) {
         throw new Error(`Colunas obrigatórias não encontradas: ${missingColumns.join(', ')}`)
       }
 
-      // Processar dados e inserir no Supabase
-      const produtos = data.map(row => ({
-        codigo: String(row['Produto'] || '').trim(),
-        descricao: String(row['Descrição do produto'] || '').trim(),
-        disponivel: parseInt(row['Disponível']) || 0,
-        a_caminho: parseInt(row['A caminho']) || 0,
-        nivel_minimo: 5 // Valor padrão
-      })).filter(produto => produto.codigo && produto.descricao)
+      // Processar dados
+      let produtos_processados = 0
+      let produtos_atualizados = 0
 
-      if (produtos.length === 0) {
-        throw new Error('Nenhum produto válido encontrado na planilha')
+      for (const row of data) {
+        const codigo = String(row['Produto'] || '').trim()
+        const descricao = String(row['Descrição do produto'] || '').trim()
+        const disponivel = parseInt(row['Disponível']) || 0
+        const a_caminho = parseInt(row['A caminho']) || 0
+        const nivel_minimo = 5 // Valor padrão
+
+        if (!codigo) {
+          continue // Ignorar linhas sem código de produto
+        }
+
+        // Verificar se o produto já existe
+        const { data: existingProducts, error: selectError } = await supabase
+          .from('produtos')
+          .select('id')
+          .eq('codigo', codigo)
+
+        if (selectError) throw selectError
+
+        const produtoData = {
+          codigo,
+          descricao,
+          disponivel,
+          a_caminho,
+          nivel_minimo,
+          updated_at: new Date().toISOString() // Adicionar updated_at
+        }
+
+        if (existingProducts && existingProducts.length > 0) {
+          // Atualizar produto existente
+          const { error: updateError } = await supabase
+            .from('produtos')
+            .update(produtoData)
+            .eq('id', existingProducts[0].id)
+          
+          if (updateError) throw updateError
+          produtos_atualizados += 1
+        } else {
+          // Inserir novo produto
+          const { error: insertError } = await supabase
+            .from('produtos')
+            .insert({ ...produtoData, created_at: new Date().toISOString() })
+          
+          if (insertError) throw insertError
+          produtos_processados += 1
+        }
       }
-
-      // Limpar tabela existente e inserir novos dados
-      const { error: deleteError } = await supabase
-        .from('produtos')
-        .delete()
-        .neq('id', 0) // Deletar todos os registros
-
-      if (deleteError) throw deleteError
-
-      // Inserir novos produtos
-      const { error: insertError } = await supabase
-        .from('produtos')
-        .insert(produtos)
-
-      if (insertError) throw insertError
 
       setMessage({
         type: 'success',
-        text: `Planilha processada com sucesso! ${produtos.length} produtos importados.`
+        text: `Planilha processada com sucesso! ${produtos_processados} novos produtos e ${produtos_atualizados} produtos atualizados.`
       })
 
       // Notificar componente pai sobre o sucesso
