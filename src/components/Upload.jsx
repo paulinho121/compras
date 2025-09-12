@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import * as XLSX from 'xlsx'
 
 export default function UploadComponent({ onUploadSuccess }) {
   const [uploading, setUploading] = useState(false)
@@ -16,18 +17,11 @@ export default function UploadComponent({ onUploadSuccess }) {
       setUploading(true)
       setMessage(null)
 
-      // Verificar se é um arquivo Excel
       if (!file.name.match(/\.(xlsx|xls)$/)) {
         throw new Error('Por favor, selecione um arquivo Excel (.xlsx ou .xls)')
       }
 
-      // Ler o arquivo como ArrayBuffer
       const arrayBuffer = await file.arrayBuffer()
-      
-      // Importar a biblioteca XLSX dinamicamente
-      const XLSX = await import('https://cdn.skypack.dev/xlsx')
-      
-      // Processar o arquivo Excel
       const workbook = XLSX.read(arrayBuffer, { type: 'array' })
       const sheetName = workbook.SheetNames[0]
       const worksheet = workbook.Sheets[sheetName]
@@ -37,7 +31,6 @@ export default function UploadComponent({ onUploadSuccess }) {
         throw new Error('A planilha está vazia')
       }
 
-      // Validar colunas necessárias
       const requiredColumns = ['Produto', 'Descrição do produto', 'Disponível', 'A caminho']
       const firstRow = data[0]
       const missingColumns = requiredColumns.filter(col => !(col in firstRow))
@@ -46,64 +39,46 @@ export default function UploadComponent({ onUploadSuccess }) {
         throw new Error(`Colunas obrigatórias não encontradas: ${missingColumns.join(', ')}`)
       }
 
-      // Processar dados
-      let produtos_processados = 0
-      let produtos_atualizados = 0
-
-      for (const row of data) {
-        const codigo = String(row['Produto'] || '').trim()
-        const descricao = String(row['Descrição do produto'] || '').trim()
-        const disponivel = parseInt(row['Disponível']) || 0
-        const a_caminho = parseInt(row['A caminho']) || 0
-        const nivel_minimo = 5 // Valor padrão
-
-        if (!codigo) {
-          continue // Ignorar linhas sem código de produto
-        }
-
-        // Verificar se o produto já existe
-        const { data: existingProducts, error: selectError } = await supabase
-          .from('produtos')
-          .select('id')
-          .eq('codigo', codigo)
-
-        if (selectError) throw selectError
-
-        const produtoData = {
-          codigo,
-          descricao,
-          disponivel,
-          a_caminho,
-          nivel_minimo,
-          updated_at: new Date().toISOString() // Adicionar updated_at
-        }
-
-        if (existingProducts && existingProducts.length > 0) {
-          // Atualizar produto existente
-          const { error: updateError } = await supabase
-            .from('produtos')
-            .update(produtoData)
-            .eq('id', existingProducts[0].id)
+      // Preparar dados para inserção
+      const produtos = data
+        .map(row => {
+          const codigo = parseInt(row['Produto']) || 0;
           
-          if (updateError) throw updateError
-          produtos_atualizados += 1
-        } else {
-          // Inserir novo produto
-          const { error: insertError } = await supabase
-            .from('produtos')
-            .insert({ ...produtoData, created_at: new Date().toISOString() })
-          
-          if (insertError) throw insertError
-          produtos_processados += 1
-        }
+          // Pular linhas com código inválido
+          if (!codigo || isNaN(codigo)) {
+            return null;
+          }
+
+          return {
+            codigo: codigo,
+            desericao: String(row['Descrição do produto'] || '').trim(),
+            disponivel: parseInt(row['Disponível']) || 0,
+            a_caminho: parseInt(row['A caminho']) || 0,
+            nivel_minimo: 5,
+            updated_at: new Date().toISOString()
+          };
+        })
+        .filter(produto => produto !== null); // Remover linhas inválidas
+
+      if (produtos.length === 0) {
+        throw new Error('Nenhum produto válido encontrado na planilha');
       }
+
+      // Fazer upsert em lote
+      const { error } = await supabase
+        .from('produtos')
+        .upsert(produtos, {
+          onConflict: 'codigo',
+          ignoreDuplicates: false
+        })
+
+      if (error) throw error
 
       setMessage({
         type: 'success',
-        text: `Planilha processada com sucesso! ${produtos_processados} novos produtos e ${produtos_atualizados} produtos atualizados.`
+        text: `Planilha processada com sucesso! ${produtos.length} produtos processados.`
       })
 
-      // Notificar componente pai sobre o sucesso
       if (onUploadSuccess) {
         onUploadSuccess()
       }
@@ -232,7 +207,7 @@ export default function UploadComponent({ onUploadSuccess }) {
             <div className="space-y-2">
               <h4 className="font-medium">Colunas Obrigatórias:</h4>
               <ul className="text-sm space-y-1 text-gray-600">
-                <li>• <strong>Produto</strong> - Código do produto</li>
+                <li>• <strong>Produto</strong> - Código do produto (número)</li>
                 <li>• <strong>Descrição do produto</strong> - Nome/descrição</li>
                 <li>• <strong>Disponível</strong> - Quantidade em estoque</li>
                 <li>• <strong>A caminho</strong> - Quantidade em trânsito</li>
@@ -245,6 +220,7 @@ export default function UploadComponent({ onUploadSuccess }) {
                 <li>• Valores numéricos devem ser números inteiros</li>
                 <li>• Linhas vazias serão ignoradas</li>
                 <li>• O nível mínimo será definido como 5 por padrão</li>
+                <li>• A coluna "Produto" deve conter apenas números</li>
               </ul>
             </div>
           </div>
@@ -253,4 +229,3 @@ export default function UploadComponent({ onUploadSuccess }) {
     </div>
   )
 }
-
