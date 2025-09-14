@@ -6,8 +6,9 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { Search, Settings, Package, AlertTriangle, TrendingUp, CheckCircle } from 'lucide-react'
+import { Search, Settings, Package, AlertTriangle, TrendingUp, CheckCircle, BarChart3, List } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import AnaliseEstoque from './AnaliseEstoque'
 
 const STATUS_CONFIG = {
   critico: {
@@ -44,6 +45,7 @@ export default function Produtos() {
   const [filterStatus, setFilterStatus] = useState('todos')
   const [produtoEditando, setProdutoEditando] = useState(null)
   const [novoNivelMinimo, setNovoNivelMinimo] = useState('')
+  const [visualizacao, setVisualizacao] = useState('lista') // 'lista' ou 'analise'
 
   useEffect(() => {
     carregarDados()
@@ -116,124 +118,154 @@ export default function Produtos() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Gerenciar Produtos</CardTitle>
-          <CardDescription>
-            {produtos.length} produtos encontrados
-          </CardDescription>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle>Gerenciar Produtos</CardTitle>
+              <CardDescription>
+                {produtos.length} produtos encontrados
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant={visualizacao === 'lista' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setVisualizacao('lista')}
+                className="flex items-center gap-2"
+              >
+                <List className="h-4 w-4" />
+                Lista
+              </Button>
+              <Button
+                variant={visualizacao === 'analise' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setVisualizacao('analise')}
+                className="flex items-center gap-2"
+              >
+                <BarChart3 className="h-4 w-4" />
+                Análise
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Buscar por código ou descrição..."
-                className="w-full pl-9"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <Select onValueChange={setFilterStatus} value={filterStatus}>
-              <SelectTrigger className="w-full md:w-[180px]">
-                <SelectValue placeholder="Filtrar por Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos os Status</SelectItem>
-                {Object.keys(STATUS_CONFIG).map(status => (
-                  <SelectItem key={status} value={status}>
-                    {STATUS_CONFIG[status].label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {filteredProdutos.length === 0 ? (
-            <div className="text-center text-gray-500 py-12">
-              Nenhum produto encontrado com os critérios de busca.
-            </div>
+          {visualizacao === 'analise' ? (
+            <AnaliseEstoque produtos={produtos} />
           ) : (
-            <div className="space-y-4">
-              {filteredProdutos.map((produto) => {
-                const StatusIcon = STATUS_CONFIG[produto.status]?.icon
-                return (
-                  <div key={produto.id} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div className="flex items-center gap-4 flex-1">
-                        <div className="w-12 h-12 flex items-center justify-center rounded-full bg-gray-100 text-gray-500">
-                          <Package className="h-6 w-6" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-semibold text-lg">{produto.descricao}</div>
-                          <div className="text-sm text-gray-500">Código: {produto.codigo}</div>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 md:grid-cols-4 md:gap-6 md:text-right">
-                        <div>
-                          <div className="font-medium">Disponível</div>
-                          <div className="text-gray-900 font-bold">{produto.disponivel}</div>
-                        </div>
-                        <div>
-                          <div className="font-medium">A Caminho</div>
-                          <div className="text-gray-900 font-bold">{produto.a_caminho}</div>
-                        </div>
-                        <div>
-                          <div className="font-medium">Total</div>
-                          <div className="text-gray-900 font-bold">{produto.estoque_total}</div>
-                        </div>
-                        <div>
-                          <div className="font-medium">Mínimo</div>
-                          <div className="text-gray-900 font-bold">{produto.nivel_minimo}</div>
-                        </div>
-                      </div>
-                      <div className="flex-shrink-0 text-center md:text-left">
-                        <Badge className={`justify-center font-medium ${STATUS_CONFIG[produto.status]?.color}`}>
-                          {StatusIcon && <StatusIcon className={`h-4 w-4 mr-1 ${STATUS_CONFIG[produto.status]?.iconColor}`} />}
-                          {STATUS_CONFIG[produto.status]?.label}
-                        </Badge>
-                      </div>
-                      <div className="flex-shrink-0 flex justify-end">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="ml-auto">
-                              <Settings className="h-4 w-4 mr-2" />
-                              Configurar
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Configurar Nível Mínimo</DialogTitle>
-                              <DialogDescription>
-                                Ajuste o nível mínimo de estoque para o produto <strong>{produto.descricao}</strong>.
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                              <div>
-                                <Label htmlFor="nivel-minimo">Nível Mínimo</Label>
-                                <Input
-                                  id="nivel-minimo"
-                                  type="number"
-                                  value={novoNivelMinimo}
-                                  onChange={(e) => setNovoNivelMinimo(e.target.value)}
-                                  placeholder="Digite o nível mínimo"
-                                />
-                              </div>
+            <>
+              <div className="flex flex-col md:flex-row gap-4 mb-6">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Buscar por código ou descrição..."
+                    className="w-full pl-9"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <Select onValueChange={setFilterStatus} value={filterStatus}>
+                  <SelectTrigger className="w-full md:w-[180px]">
+                    <SelectValue placeholder="Filtrar por Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os Status</SelectItem>
+                    {Object.keys(STATUS_CONFIG).map(status => (
+                      <SelectItem key={status} value={status}>
+                        {STATUS_CONFIG[status].label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {filteredProdutos.length === 0 ? (
+                <div className="text-center text-gray-500 py-12">
+                  Nenhum produto encontrado com os critérios de busca.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredProdutos.map((produto) => {
+                    const StatusIcon = STATUS_CONFIG[produto.status]?.icon
+                    return (
+                      <div key={produto.id} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div className="flex items-center gap-4 flex-1">
+                            <div className="w-12 h-12 flex items-center justify-center rounded-full bg-gray-100 text-gray-500">
+                              <Package className="h-6 w-6" />
                             </div>
-                            <DialogFooter>
-                              <Button variant="outline" onClick={() => setProdutoEditando(null)}>
-                                Cancelar
-                              </Button>
-                              <Button onClick={atualizarNivelMinimo}>
-                                Salvar
-                              </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
+                            <div className="flex-1">
+                              <div className="font-semibold text-lg">{produto.descricao}</div>
+                              <div className="text-sm text-gray-500">Código: {produto.codigo}</div>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 md:grid-cols-4 md:gap-6 md:text-right">
+                            <div>
+                              <div className="font-medium">Disponível</div>
+                              <div className="text-gray-900 font-bold">{produto.disponivel}</div>
+                            </div>
+                            <div>
+                              <div className="font-medium">A Caminho</div>
+                              <div className="text-gray-900 font-bold">{produto.a_caminho}</div>
+                            </div>
+                            <div>
+                              <div className="font-medium">Total</div>
+                              <div className="text-gray-900 font-bold">{produto.estoque_total}</div>
+                            </div>
+                            <div>
+                              <div className="font-medium">Mínimo</div>
+                              <div className="text-gray-900 font-bold">{produto.nivel_minimo}</div>
+                            </div>
+                          </div>
+                          <div className="flex-shrink-0 text-center md:text-left">
+                            <Badge className={`justify-center font-medium ${STATUS_CONFIG[produto.status]?.color}`}>
+                              {StatusIcon && <StatusIcon className={`h-4 w-4 mr-1 ${STATUS_CONFIG[produto.status]?.iconColor}`} />}
+                              {STATUS_CONFIG[produto.status]?.label}
+                            </Badge>
+                          </div>
+                          <div className="flex-shrink-0 flex justify-end">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="outline" size="sm" className="ml-auto">
+                                  <Settings className="h-4 w-4 mr-2" />
+                                  Configurar
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Configurar Nível Mínimo</DialogTitle>
+                                  <DialogDescription>
+                                    Ajuste o nível mínimo de estoque para o produto <strong>{produto.descricao}</strong>.
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div>
+                                    <Label htmlFor="nivel-minimo">Nível Mínimo</Label>
+                                    <Input
+                                      id="nivel-minimo"
+                                      type="number"
+                                      value={novoNivelMinimo}
+                                      onChange={(e) => setNovoNivelMinimo(e.target.value)}
+                                      placeholder="Digite o nível mínimo"
+                                    />
+                                  </div>
+                                </div>
+                                <DialogFooter>
+                                  <Button variant="outline" onClick={() => setProdutoEditando(null)}>
+                                    Cancelar
+                                  </Button>
+                                  <Button onClick={atualizarNivelMinimo}>
+                                    Salvar
+                                  </Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+                    )
+                  })}
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
