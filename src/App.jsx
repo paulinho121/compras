@@ -21,7 +21,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm">
+      <header className="bg-gradient-to-r from-gray-100 to-gray-200 border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
@@ -31,7 +31,7 @@ function App() {
                 className="h-10 w-auto"
               />
               <div>
-                <h1 className="text-xl font-bold text-gray-900">
+                <h1 className="text-xl font-bold text-logo-teal">
                   Sistema de Gestão de Compras
                 </h1>
                 <p className="text-sm text-gray-500">
@@ -108,4 +108,3 @@ function App() {
 }
 
 export default App
-
