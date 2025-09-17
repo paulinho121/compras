@@ -97,11 +97,12 @@ export default function Produtos() {
   }
 
   const filteredProdutos = produtos.filter(produto => {
-    const matchesSearch = produto.descricao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          produto.codigo?.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = filterStatus === 'todos' || produto.status === filterStatus
-    return matchesSearch && matchesStatus
-  })
+    const term = searchTerm.toLowerCase();
+    const matchesSearch = (produto.descricao || '').toLowerCase().includes(term) ||
+                          String(produto.codigo || '').toLowerCase().includes(term);
+    const matchesStatus = filterStatus === 'todos' || produto.status === filterStatus;
+    return matchesSearch && matchesStatus;
+  });
 
   if (loading) {
     return (
@@ -131,7 +132,7 @@ export default function Produtos() {
             <div>
               <CardTitle>Gerenciar Produtos</CardTitle>
               <CardDescription>
-                {produtos.length} produtos encontrados
+                {filteredProdutos.length} produtos encontrados
               </CardDescription>
             </div>
             <div className="flex gap-2">
