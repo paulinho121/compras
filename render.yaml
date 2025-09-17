@@ -5,4 +5,3 @@ services:
     plan: free
     buildCommand: pnpm install && pnpm build
     startCommand: pnpm start
-    staticPublishPath: dist
