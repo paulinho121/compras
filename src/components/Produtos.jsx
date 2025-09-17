@@ -195,8 +195,13 @@ export default function Produtos() {
                 <div className="space-y-4">
                   {filteredProdutos.map((produto) => {
                     const StatusIcon = STATUS_CONFIG[produto.status]?.icon
+                    const isBelowMinimum = produto.disponivel < produto.nivel_minimo;
+                    const cardStyle = isBelowMinimum
+                      ? 'bg-red-50 border-red-200'
+                      : 'border';
+
                     return (
-                      <div key={produto.id} className="p-3 sm:p-4 border rounded-lg hover:shadow-md transition-shadow">
+                      <div key={produto.id} className={`p-3 sm:p-4 rounded-lg hover:shadow-md transition-shadow ${cardStyle}`}>
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                           <div className="flex items-center gap-3 sm:gap-4 flex-1">
                             <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-gray-100 text-gray-500">
