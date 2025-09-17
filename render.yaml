@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: compras-vercel
+    env: node
+    plan: free
+    buildCommand: pnpm install && pnpm build
+    startCommand: pnpm preview
+    staticPublishPath: dist

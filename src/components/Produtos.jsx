@@ -67,6 +67,16 @@ export default function Produtos() {
     }
   }
 
+  const handleOpenDialog = (produto) => {
+    setProdutoEditando(produto);
+    setNovoNivelMinimo(produto.nivel_minimo);
+  };
+
+  const handleCloseDialog = () => {
+    setProdutoEditando(null);
+    setNovoNivelMinimo('');
+  };
+
   const atualizarNivelMinimo = async () => {
     if (!produtoEditando || novoNivelMinimo === '') return
 
@@ -78,8 +88,7 @@ export default function Produtos() {
 
       if (error) throw error
 
-      setProdutoEditando(null)
-      setNovoNivelMinimo('')
+      handleCloseDialog()
       carregarDados() // Recarrega os dados para refletir a mudança
     } catch (err) {
       console.error('Erro ao atualizar o nível mínimo:', err)
@@ -222,18 +231,19 @@ export default function Produtos() {
                             </Badge>
                           </div>
                           <div className="flex-shrink-0 flex justify-end">
-                            <Dialog>
+                            <Dialog onOpenChange={(open) => !open && handleCloseDialog()}>
                               <DialogTrigger asChild>
-                                <Button variant="outline" size="sm" className="ml-auto">
+                                <Button variant="outline" size="sm" className="ml-auto" onClick={() => handleOpenDialog(produto)}>
                                   <Settings className="h-4 w-4 mr-2" />
                                   Configurar
                                 </Button>
                               </DialogTrigger>
+                             {produtoEditando && produtoEditando.id === produto.id && (
                               <DialogContent>
                                 <DialogHeader>
                                   <DialogTitle>Configurar Nível Mínimo</DialogTitle>
                                   <DialogDescription>
-                                    Ajuste o nível mínimo de estoque para o produto <strong>{produto.descricao}</strong>.
+                                    Ajuste o nível mínimo de estoque para o produto <strong>{produtoEditando.descricao}</strong>.
                                   </DialogDescription>
                                 </DialogHeader>
                                 <div className="space-y-4">
@@ -249,7 +259,7 @@ export default function Produtos() {
                                   </div>
                                 </div>
                                 <DialogFooter>
-                                  <Button variant="outline" onClick={() => setProdutoEditando(null)}>
+                                  <Button variant="outline" onClick={handleCloseDialog}>
                                     Cancelar
                                   </Button>
                                   <Button onClick={atualizarNivelMinimo}>
@@ -257,6 +267,7 @@ export default function Produtos() {
                                   </Button>
                                 </DialogFooter>
                               </DialogContent>
+                              )}
                             </Dialog>
                           </div>
                         </div>
