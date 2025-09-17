@@ -143,7 +143,7 @@ export default function Produtos() {
                 className="flex items-center gap-2"
               >
                 <List className="h-4 w-4" />
-                Lista
+                <span className="hidden sm:inline">Lista</span>
               </Button>
               <Button
                 variant={visualizacao === 'analise' ? 'default' : 'outline'}
@@ -152,7 +152,7 @@ export default function Produtos() {
                 className="flex items-center gap-2"
               >
                 <BarChart3 className="h-4 w-4" />
-                Análise
+                <span className="hidden sm:inline">Análise</span>
               </Button>
             </div>
           </div>
@@ -196,47 +196,47 @@ export default function Produtos() {
                   {filteredProdutos.map((produto) => {
                     const StatusIcon = STATUS_CONFIG[produto.status]?.icon
                     return (
-                      <div key={produto.id} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                          <div className="flex items-center gap-4 flex-1">
-                            <div className="w-12 h-12 flex items-center justify-center rounded-full bg-gray-100 text-gray-500">
-                              <Package className="h-6 w-6" />
+                      <div key={produto.id} className="p-3 sm:p-4 border rounded-lg hover:shadow-md transition-shadow">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="flex items-center gap-3 sm:gap-4 flex-1">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-gray-100 text-gray-500">
+                              <Package className="h-5 w-5 sm:h-6 sm:w-6" />
                             </div>
                             <div className="flex-1">
-                              <div className="font-semibold text-lg">{produto.descricao}</div>
-                              <div className="text-sm text-gray-500">Código: {produto.codigo}</div>
+                              <div className="font-semibold text-base sm:text-lg">{produto.descricao}</div>
+                              <div className="text-xs sm:text-sm text-gray-500">Código: {produto.codigo}</div>
                             </div>
                           </div>
-                          <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 md:grid-cols-4 md:gap-6 md:text-right">
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:text-sm text-gray-600 sm:grid-cols-4 sm:gap-6 sm:text-right">
                             <div>
                               <div className="font-medium">Disponível</div>
-                              <div className="text-gray-900 font-bold">{produto.disponivel}</div>
+                              <div className="text-gray-900 font-bold text-sm sm:text-base">{produto.disponivel}</div>
                             </div>
                             <div>
                               <div className="font-medium">A Caminho</div>
-                              <div className="text-gray-900 font-bold">{produto.a_caminho}</div>
+                              <div className="text-gray-900 font-bold text-sm sm:text-base">{produto.a_caminho}</div>
                             </div>
                             <div>
                               <div className="font-medium">Total</div>
-                              <div className="text-gray-900 font-bold">{produto.estoque_total}</div>
+                              <div className="text-gray-900 font-bold text-sm sm:text-base">{produto.estoque_total}</div>
                             </div>
                             <div>
                               <div className="font-medium">Mínimo</div>
-                              <div className="text-gray-900 font-bold">{produto.nivel_minimo}</div>
+                              <div className="text-gray-900 font-bold text-sm sm:text-base">{produto.nivel_minimo}</div>
                             </div>
                           </div>
-                          <div className="flex-shrink-0 text-center md:text-left">
+                          <div className="flex-shrink-0 text-center sm:text-left pt-2 sm:pt-0">
                             <Badge className={`justify-center font-medium ${STATUS_CONFIG[produto.status]?.color}`}>
                               {StatusIcon && <StatusIcon className={`h-4 w-4 mr-1 ${STATUS_CONFIG[produto.status]?.iconColor}`} />}
                               {STATUS_CONFIG[produto.status]?.label}
                             </Badge>
                           </div>
-                          <div className="flex-shrink-0 flex justify-end">
+                          <div className="flex-shrink-0 flex justify-end pt-2 sm:pt-0">
                             <Dialog onOpenChange={(open) => !open && handleCloseDialog()}>
                               <DialogTrigger asChild>
                                 <Button variant="outline" size="sm" className="ml-auto" onClick={() => handleOpenDialog(produto)}>
-                                  <Settings className="h-4 w-4 mr-2" />
-                                  Configurar
+                                  <Settings className="h-4 w-4 sm:mr-2" />
+                                  <span className="hidden sm:inline">Configurar</span>
                                 </Button>
                               </DialogTrigger>
                              {produtoEditando && produtoEditando.id === produto.id && (
