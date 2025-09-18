@@ -83,7 +83,7 @@ export default function Produtos() {
     try {
       const { error } = await supabase
         .from('produtos')
-        .update({ nivel_minimo: novoNivelMinimo })
+        .update({ nivel_minimo: Number(novoNivelMinimo) })
         .eq('id', produtoEditando.id)
 
       if (error) throw error
