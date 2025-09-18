@@ -45,6 +45,7 @@ export default function Produtos() {
   const [filterStatus, setFilterStatus] = useState('todos')
   const [produtoEditando, setProdutoEditando] = useState(null)
   const [novoNivelMinimo, setNovoNivelMinimo] = useState('')
+  const [dialogError, setDialogError] = useState(null)
   const [visualizacao, setVisualizacao] = useState('lista') // 'lista' ou 'analise'
 
   useEffect(() => {
@@ -70,20 +71,31 @@ export default function Produtos() {
   const handleOpenDialog = (produto) => {
     setProdutoEditando(produto);
     setNovoNivelMinimo(produto.nivel_minimo);
+    setDialogError(null);
   };
 
   const handleCloseDialog = () => {
     setProdutoEditando(null);
     setNovoNivelMinimo('');
+    setDialogError(null);
   };
 
   const atualizarNivelMinimo = async () => {
-    if (!produtoEditando || novoNivelMinimo === '') return
+    if (!produtoEditando) return;
+
+    setDialogError(null);
+
+    const nivelMinimoNumerico = parseFloat(novoNivelMinimo);
+
+    if (isNaN(nivelMinimoNumerico) || nivelMinimoNumerico < 0) {
+      setDialogError('Insira um valor numérico válido e não-negativo.');
+      return;
+    }
 
     try {
       const { error } = await supabase
         .from('produtos')
-        .update({ nivel_minimo: Number(novoNivelMinimo) })
+        .update({ nivel_minimo: nivelMinimoNumerico })
         .eq('id', produtoEditando.id)
 
       if (error) throw error
@@ -92,7 +104,7 @@ export default function Produtos() {
       carregarDados() // Recarrega os dados para refletir a mudança
     } catch (err) {
       console.error('Erro ao atualizar o nível mínimo:', err)
-      setError('Erro ao atualizar o nível mínimo. Por favor, tente novamente.')
+      setDialogError('Erro ao salvar. Verifique o valor e tente novamente.')
     }
   }
 
@@ -262,6 +274,7 @@ export default function Produtos() {
                                       onChange={(e) => setNovoNivelMinimo(e.target.value)}
                                       placeholder="Digite o nível mínimo"
                                     />
+                                    {dialogError && <p className="text-red-500 text-sm mt-2">{dialogError}</p>}
                                   </div>
                                 </div>
                                 <DialogFooter>
